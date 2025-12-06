@@ -5,8 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Build
-import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -14,9 +14,11 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.example.jplayer.MainActivity
 import com.example.jplayer.R
-import com.example.jplayer.ui.PlayerActivity
 import com.example.jplayer.utils.Constants
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 
 @UnstableApi
 class MediaPlaybackService : MediaSessionService() {
@@ -56,8 +58,8 @@ class MediaPlaybackService : MediaSessionService() {
                     mediaSession: MediaSession,
                     controller: MediaSession.ControllerInfo,
                     mediaItems: MutableList<MediaItem>
-                ): MutableList<MediaItem> {
-                    return mediaItems
+                ): ListenableFuture<MutableList<MediaItem>> {
+                    return Futures.immediateFuture(mediaItems)
                 }
             })
             .build()
@@ -90,7 +92,7 @@ class MediaPlaybackService : MediaSessionService() {
             ?: "IPlayer"
 
         // Intent to open app
-        val contentIntent = Intent(this, PlayerActivity::class.java).apply {
+        val contentIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val contentPendingIntent = PendingIntent.getActivity(
@@ -133,11 +135,10 @@ class MediaPlaybackService : MediaSessionService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(mediaTitle)
             .setContentText("IPlayer")
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(null) // TODO: Add album art/thumbnail
             .setContentIntent(contentPendingIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
@@ -162,7 +163,8 @@ class MediaPlaybackService : MediaSessionService() {
                     .setShowActionsInCompactView(0, 1, 2)
                     .setMediaSession(mediaSession?.sessionCompatToken)
             )
-            .build()
+        
+        return builder.build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
