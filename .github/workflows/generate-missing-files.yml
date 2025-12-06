@@ -1,0 +1,589 @@
+name: Generate Missing Files
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/generate-missing-files.yml'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Generate missing project files
+      run: |
+        python3 << 'PYTHON_SCRIPT'
+        import os
+        
+        # Create directories
+        dirs = [
+            "app/src/main/java/com/example/jplayer/ui/fragments",
+            "app/src/main/java/com/example/jplayer/ui/adapter",
+            "app/src/main/java/com/example/jplayer/model",
+            "app/src/main/res/layout",
+            "app/src/main/res/menu",
+            "app/src/main/res/drawable"
+        ]
+        
+        for d in dirs:
+            os.makedirs(d, exist_ok=True)
+            print(f"✅ Created: {d}")
+        
+        # MediaItem.kt
+        media_item = '''package com.example.jplayer.model
+
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+data class MediaItem(
+    val id: Long,
+    val title: String,
+    val duration: Long,
+    val size: Long,
+    val path: String,
+    val uri: String,
+    val dateAdded: Long,
+    val isVideo: Boolean,
+    val artist: String? = null,
+    val album: String? = null,
+    var isFavorite: Boolean = false
+) : Parcelable {
+    
+    fun getFormattedDuration(): String {
+        val seconds = (duration / 1000) % 60
+        val minutes = (duration / (1000 * 60)) % 60
+        val hours = (duration / (1000 * 60 * 60))
+        
+        return if (hours > 0) {
+            String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format("%02d:%02d", minutes, seconds)
+        }
+    }
+    
+    fun getFormattedSize(): String {
+        val kb = size / 1024.0
+        val mb = kb / 1024.0
+        val gb = mb / 1024.0
+        
+        return when {
+            gb >= 1 -> String.format("%.2f GB", gb)
+            mb >= 1 -> String.format("%.2f MB", mb)
+            else -> String.format("%.2f KB", kb)
+        }
+    }
+}'''
+        
+        with open("app/src/main/java/com/example/jplayer/model/MediaItem.kt", "w") as f:
+            f.write(media_item)
+        print("✅ Created: MediaItem.kt")
+        
+        # Playlist.kt
+        playlist = '''package com.example.jplayer.model
+
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+data class Playlist(
+    val id: Long,
+    val name: String,
+    val itemCount: Int = 0,
+    val dateCreated: Long = System.currentTimeMillis(),
+    val items: List<MediaItem> = emptyList()
+) : Parcelable'''
+        
+        with open("app/src/main/java/com/example/jplayer/model/Playlist.kt", "w") as f:
+            f.write(playlist)
+        print("✅ Created: Playlist.kt")
+        
+        # BrowseFragment.kt
+        browse_fragment = '''package com.example.jplayer.ui.fragments
+
+import android.os.Bundle
+import android.os.Environment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.jplayer.databinding.FragmentBrowseBinding
+import java.io.File
+
+class BrowseFragment : Fragment() {
+    
+    private var _binding: FragmentBrowseBinding? = null
+    private val binding get() = _binding!!
+    
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentBrowseBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+    
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        
+        binding.textInfo.text = "File browser - Coming soon"
+    }
+    
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}'''
+        
+        with open("app/src/main/java/com/example/jplayer/ui/fragments/BrowseFragment.kt", "w") as f:
+            f.write(browse_fragment)
+        print("✅ Created: BrowseFragment.kt")
+        
+        # PlaylistFragment.kt
+        playlist_fragment = '''package com.example.jplayer.ui.fragments
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.jplayer.databinding.FragmentPlaylistBinding
+
+class PlaylistFragment : Fragment() {
+    
+    private var _binding: FragmentPlaylistBinding? = null
+    private val binding get() = _binding!!
+    
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentPlaylistBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+    
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        
+        binding.textInfo.text = "Playlists - Coming soon"
+    }
+    
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}'''
+        
+        with open("app/src/main/java/com/example/jplayer/ui/fragments/PlaylistFragment.kt", "w") as f:
+            f.write(playlist_fragment)
+        print("✅ Created: PlaylistFragment.kt")
+        
+        # VideoAdapter.kt
+        video_adapter = '''package com.example.jplayer.ui.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.example.jplayer.databinding.ItemVideoBinding
+import com.example.jplayer.model.MediaItem
+
+class VideoAdapter(
+    private val videos: List<MediaItem>,
+    private val onClick: (MediaItem) -> Unit
+) : RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
+    
+    inner class VideoViewHolder(private val binding: ItemVideoBinding) : 
+        RecyclerView.ViewHolder(binding.root) {
+        
+        fun bind(video: MediaItem) {
+            binding.textTitle.text = video.title
+            binding.textDuration.text = video.getFormattedDuration()
+            binding.textSize.text = video.getFormattedSize()
+            
+            Glide.with(binding.root.context)
+                .load(video.uri)
+                .centerCrop()
+                .into(binding.imageThumbnail)
+            
+            binding.root.setOnClickListener { onClick(video) }
+        }
+    }
+    
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
+        val binding = ItemVideoBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
+        return VideoViewHolder(binding)
+    }
+    
+    override fun onBindViewHolder(holder: VideoViewHolder, position: Int) {
+        holder.bind(videos[position])
+    }
+    
+    override fun getItemCount() = videos.size
+}'''
+        
+        with open("app/src/main/java/com/example/jplayer/ui/adapter/VideoAdapter.kt", "w") as f:
+            f.write(video_adapter)
+        print("✅ Created: VideoAdapter.kt")
+        
+        # AudioAdapter.kt
+        audio_adapter = '''package com.example.jplayer.ui.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.example.jplayer.databinding.ItemAudioBinding
+import com.example.jplayer.model.MediaItem
+
+class AudioAdapter(
+    private val audios: List<MediaItem>,
+    private val onClick: (MediaItem) -> Unit
+) : RecyclerView.Adapter<AudioAdapter.AudioViewHolder>() {
+    
+    inner class AudioViewHolder(private val binding: ItemAudioBinding) : 
+        RecyclerView.ViewHolder(binding.root) {
+        
+        fun bind(audio: MediaItem) {
+            binding.textTitle.text = audio.title
+            binding.textArtist.text = audio.artist ?: "Unknown Artist"
+            binding.textDuration.text = audio.getFormattedDuration()
+            
+            binding.root.setOnClickListener { onClick(audio) }
+        }
+    }
+    
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AudioViewHolder {
+        val binding = ItemAudioBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
+        return AudioViewHolder(binding)
+    }
+    
+    override fun onBindViewHolder(holder: AudioViewHolder, position: Int) {
+        holder.bind(audios[position])
+    }
+    
+    override fun getItemCount() = audios.size
+}'''
+        
+        with open("app/src/main/java/com/example/jplayer/ui/adapter/AudioAdapter.kt", "w") as f:
+            f.write(audio_adapter)
+        print("✅ Created: AudioAdapter.kt")
+        
+        print("\n🎉 All Kotlin files generated successfully!")
+        PYTHON_SCRIPT
+        
+    - name: Generate Layout XML files
+      run: |
+        python3 << 'PYTHON_SCRIPT'
+        
+        # fragment_video.xml
+        fragment_video = '''<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        android:clipToPadding="false" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/emptyView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No videos found"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>'''
+        
+        with open("app/src/main/res/layout/fragment_video.xml", "w") as f:
+            f.write(fragment_video)
+        print("✅ Created: fragment_video.xml")
+        
+        # fragment_audio.xml (same structure)
+        fragment_audio = fragment_video.replace("No videos found", "No audio found")
+        with open("app/src/main/res/layout/fragment_audio.xml", "w") as f:
+            f.write(fragment_audio)
+        print("✅ Created: fragment_audio.xml")
+        
+        # fragment_browse.xml
+        fragment_browse = '''<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/textInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Browse files"
+        android:textSize="18sp" />
+
+</LinearLayout>'''
+        
+        with open("app/src/main/res/layout/fragment_browse.xml", "w") as f:
+            f.write(fragment_browse)
+        print("✅ Created: fragment_browse.xml")
+        
+        # fragment_playlist.xml
+        fragment_playlist = fragment_browse.replace("Browse files", "Playlists")
+        with open("app/src/main/res/layout/fragment_playlist.xml", "w") as f:
+            f.write(fragment_playlist)
+        print("✅ Created: fragment_playlist.xml")
+        
+        # item_video.xml
+        item_video = '''<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/imageThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:background="#CC000000"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/imageThumbnail"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/textTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Video title"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/imageThumbnail" />
+
+        <TextView
+            android:id="@+id/textSize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="0 MB"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textTitle" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>'''
+        
+        with open("app/src/main/res/layout/item_video.xml", "w") as f:
+            f.write(item_video)
+        print("✅ Created: item_video.xml")
+        
+        # item_audio.xml
+        item_audio = '''<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/imageAlbumArt"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_music"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Song title"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/textDuration"
+            app:layout_constraintStart_toEndOf="@id/imageAlbumArt"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textArtist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Artist name"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/textDuration"
+            app:layout_constraintStart_toEndOf="@id/imageAlbumArt"
+            app:layout_constraintTop_toBottomOf="@id/textTitle" />
+
+        <TextView
+            android:id="@+id/textDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>'''
+        
+        with open("app/src/main/res/layout/item_audio.xml", "w") as f:
+            f.write(item_audio)
+        print("✅ Created: item_audio.xml")
+        
+        print("\n🎉 All Layout XML files generated successfully!")
+        PYTHON_SCRIPT
+        
+    - name: Generate Menu and Drawable files
+      run: |
+        python3 << 'PYTHON_SCRIPT'
+        
+        # menu_main.xml
+        menu_main = '''<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search"
+        android:title="Search"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        android:title="Sort"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_refresh"
+        android:icon="@drawable/ic_refresh"
+        android:title="Refresh"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="Settings"
+        app:showAsAction="never" />
+
+</menu>'''
+        
+        with open("app/src/main/res/menu/menu_main.xml", "w") as f:
+            f.write(menu_main)
+        print("✅ Created: menu_main.xml")
+        
+        # Drawable icons (vector XML)
+        icons = {
+            "ic_video": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M17,10.5V7c0,-0.55 -0.45,-1 -1,-1H4c-0.55,0 -1,0.45 -1,1v10c0,0.55 0.45,1 1,1h12c0.55,0 1,-0.45 1,-1v-3.5l4,4v-11l-4,4z"/>
+</vector>''',
+            "ic_music": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z"/>
+</vector>''',
+            "ic_folder": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M10,4H4c-1.1,0 -1.99,0.9 -1.99,2L2,18c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V8c0,-1.1 -0.9,-2 -2,-2h-8l-2,-2z"/>
+</vector>''',
+            "ic_playlist": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M15,6H3v2h12V6zM15,10H3v2h12V10zM3,16h8v-2H3V16zM17,6v8.18c-0.31,-0.11 -0.65,-0.18 -1,-0.18 -1.66,0 -3,1.34 -3,3s1.34,3 3,3 3,-1.34 3,-3V8h3V6h-5z"/>
+</vector>''',
+            "ic_search": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z"/>
+</vector>''',
+            "ic_sort": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M3,18h6v-2H3v2zM3,6v2h18V6H3zM3,13h12v-2H3v2z"/>
+</vector>''',
+            "ic_refresh": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M17.65,6.35C16.2,4.9 14.21,4 12,4c-4.42,0 -7.99,3.58 -7.99,8s3.57,8 7.99,8c3.73,0 6.84,-2.55 7.73,-6h-2.08c-0.82,2.33 -3.04,4 -5.65,4 -3.31,0 -6,-2.69 -6,-6s2.69,-6 6,-6c1.66,0 3.14,0.69 4.22,1.78L13,11h7V4l-2.35,2.35z"/>
+</vector>''',
+            "ic_settings": '''<vector android:height="24dp" android:tint="#FFFFFF" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="@android:color/white" android:pathData="M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94 0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58C4.84,11.36 4.8,11.69 4.8,12s0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6s3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z"/>
+</vector>'''
+        }
+        
+        for name, content in icons.items():
+            with open(f"app/src/main/res/drawable/{name}.xml", "w") as f:
+                f.write(content)
+            print(f"✅ Created: {name}.xml")
