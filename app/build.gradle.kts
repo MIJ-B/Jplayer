@@ -1,4 +1,4 @@
-plugins {
+{
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-parcelize")
@@ -55,6 +55,9 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.2.1")
     implementation("androidx.media3:media3-common:1.2.1")
     implementation("androidx.media3:media3-session:1.2.1")
+    
+    // ✅ NAMBOARINA - Media support ho an'ny notification
+    implementation("androidx.media:media:1.7.0")
 
     // Lifecycle & ViewModel
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
