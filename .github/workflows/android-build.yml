@@ -23,28 +23,17 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
-      with:
-        gradle-version: 8.2
 
     - name: Generate Gradle Wrapper
-      run: gradle wrapper --gradle-version 8.2
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Verify project structure
       run: |
-        echo "📁 Project structure:"
-        ls -la
-        echo ""
-        echo "📁 App directory:"
-        ls -la app/
-        echo ""
-        echo "🎨 Checking icons:"
-        ls -la app/src/main/res/mipmap-*/ || echo "⚠️ No mipmap directories found"
+        gradle wrapper --gradle-version 8.2
+        chmod +x gradlew
 
-    - name: Clean project
-      run: ./gradlew clean
+    - name: Verify icons
+      run: |
+        echo "🎨 Checking launcher icons..."
+        find app/src/main/res/mipmap-* -name "ic_launcher*" -type f
+        echo "✅ Icons verified!"
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug --stacktrace
@@ -58,12 +47,5 @@ jobs:
 
     - name: Build Summary
       run: |
-        echo "✅ Build completed successfully!"
-        echo ""
-        echo "📦 APK Info:"
+        echo "✅ Build completed!"
         ls -lh app/build/outputs/apk/debug/*.apk
-        echo ""
-        APK_SIZE=$(ls -lh app/build/outputs/apk/debug/app-debug.apk | awk '{print $5}')
-        echo "📏 APK Size: $APK_SIZE"
-        echo ""
-        echo "📥 Download the APK from the Artifacts section above"
