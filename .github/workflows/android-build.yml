@@ -95,6 +95,7 @@ jobs:
           -fill white -stroke white -strokewidth 4 \
           -draw "polygon 54,36 54,108 108,72" \
           app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+        
         convert -size 192x192 xc:none \
           -fill "#3700B3" -draw "circle 96,96 96,0" \
           -fill white -stroke white -strokewidth 5 \
@@ -103,6 +104,194 @@ jobs:
         
         echo "✅ Launcher icons generated!"
         ls -lh app/src/main/res/mipmap-*/
+
+    - name: Check and generate missing drawable resources
+      run: |
+        echo "🔍 Checking existing drawable resources in repo..."
+        mkdir -p app/src/main/res/drawable
+        
+        # List existing drawables
+        if [ -d "app/src/main/res/drawable" ]; then
+          echo "📁 Existing drawable files:"
+          ls -lh app/src/main/res/drawable/ | grep "\.xml" || echo "No XML drawables found"
+        fi
+        
+        echo ""
+        echo "🔧 Checking for missing required drawables..."
+        
+        # Function to create drawable if missing
+        create_if_missing() {
+          local filename=$1
+          local content=$2
+          
+          if [ ! -f "app/src/main/res/drawable/${filename}" ]; then
+            echo "  ➕ Creating missing: ${filename}"
+            echo "${content}" > "app/src/main/res/drawable/${filename}"
+          else
+            echo "  ✅ Already exists: ${filename}"
+          fi
+        }
+        
+        # ic_play.xml
+        create_if_missing "ic_play.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M8,5v14l11,-7z"/>
+        </vector>'
+        
+        # ic_pause.xml
+        create_if_missing "ic_pause.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M6,4h4v16h-4zM14,4h4v16h-4z"/>
+        </vector>'
+        
+        # ic_skip_next.xml
+        create_if_missing "ic_skip_next.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M6,18l8.5,-6L6,6v12zM16,6v12h2V6h-2z"/>
+        </vector>'
+        
+        # ic_skip_previous.xml
+        create_if_missing "ic_skip_previous.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M6,6h2v12H6zm3.5,6l8.5,6V6z"/>
+        </vector>'
+        
+        # ic_fast_forward.xml
+        create_if_missing "ic_fast_forward.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M4,18l8.5,-6L4,6v12zM13,6v12l8.5,-6L13,6z"/>
+        </vector>'
+        
+        # ic_fast_rewind.xml
+        create_if_missing "ic_fast_rewind.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M11,18V6l-8.5,6 8.5,6zm0.5,-6l8.5,6V6l-8.5,6z"/>
+        </vector>'
+        
+        # ic_repeat.xml
+        create_if_missing "ic_repeat.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M7,7h10v3l4,-4-4,-4v3H5v6h2V7zm10,10H7v-3l-4,4 4,4v-3h12v-6h-2v4z"/>
+        </vector>'
+        
+        # ic_shuffle.xml
+        create_if_missing "ic_shuffle.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M10.59,9.17L5.41,4 4,5.41l5.17,5.17 1.42,-1.41zM14.5,4l2.04,2.04L4,18.59 5.41,20 17.96,7.46 20,9.5V4h-5.5zm0.33,9.41l-1.41,1.41 3.13,3.13L14.5,20H20v-5.5l-2.04,2.04 -3.13,-3.13z"/>
+        </vector>'
+        
+        # ic_volume_up.xml
+        create_if_missing "ic_volume_up.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M3,9v6h4l5,5V4L7,9H3zm13.5,3c0,-1.77 -1.02,-3.29 -2.5,-4.03v8.05c1.48,-0.73 2.5,-2.25 2.5,-4.02zM14,3.23v2.06c2.89,0.86 5,3.54 5,6.71s-2.11,5.85 -5,6.71v2.06c4.01,-0.91 7,-4.49 7,-8.77s-2.99,-7.86 -7,-8.77z"/>
+        </vector>'
+        
+        # ic_brightness.xml
+        create_if_missing "ic_brightness.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M20,15.31L23.31,12 20,8.69V4h-4.69L12,0.69 8.69,4H4v4.69L0.69,12 4,15.31V20h4.69L12,23.31 15.31,20H20v-4.69zM12,18V6c3.31,0 6,2.69 6,6s-2.69,6 -6,6z"/>
+        </vector>'
+        
+        # ic_fullscreen.xml
+        create_if_missing "ic_fullscreen.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M7,14H5v5h5v-2H7v-3zm-2,-4h2V7h3V5H5v5zm12,7h-3v2h5v-5h-2v3zM14,5v2h3v3h2V5h-5z"/>
+        </vector>'
+        
+        # ic_lock.xml
+        create_if_missing "ic_lock.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M18,8h-1V6c0,-2.76 -2.24,-5 -5,-5S7,3.24 7,6v2H6c-1.1,0 -2,0.9 -2,2v10c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V10c0,-1.1 -0.9,-2 -2,-2zm-6,9c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2 2,0.9 2,2 -0.9,2 -2,2zm3.1,-9H8.9V6c0,-1.71 1.39,-3.1 3.1,-3.1 1.71,0 3.1,1.39 3.1,3.1v2z"/>
+        </vector>'
+        
+        # ic_settings.xml
+        create_if_missing "ic_settings.xml" '<?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94 0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58C4.84,11.36 4.8,11.69 4.8,12s0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6s3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z"/>
+        </vector>'
+        
+        echo ""
+        echo "✅ Drawable resources check complete!"
+        echo "📊 Final drawable count:"
+        ls -1 app/src/main/res/drawable/*.xml 2>/dev/null | wc -l
 
     - name: Clean project
       run: ./gradlew clean
