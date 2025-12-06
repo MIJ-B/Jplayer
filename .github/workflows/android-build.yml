@@ -22,9 +22,23 @@ jobs:
         distribution: 'temurin'
         cache: gradle
         
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v3
+      with:
+        gradle-version: 8.4
+        
+    - name: Generate Gradle Wrapper
+      run: |
+        echo "🔧 Generating Gradle Wrapper..."
+        gradle wrapper --gradle-version 8.4 --distribution-type all
+        chmod +x gradlew
+        echo "✅ Gradle Wrapper generated successfully"
+        
+    - name: Verify Gradle Wrapper
+      run: |
+        echo "📋 Verifying Gradle setup..."
+        ./gradlew --version
+        
     - name: Cache Gradle packages
       uses: actions/cache@v3
       with:
@@ -35,54 +49,108 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
           
+    - name: Clean project
+      run: ./gradlew clean --stacktrace
+      
     - name: Generate launcher icons
       run: |
-        echo "Generating launcher icons..."
+        echo "🎨 Preparing resource directories..."
         mkdir -p app/src/main/res/mipmap-mdpi
         mkdir -p app/src/main/res/mipmap-hdpi
         mkdir -p app/src/main/res/mipmap-xhdpi
         mkdir -p app/src/main/res/mipmap-xxhdpi
         mkdir -p app/src/main/res/mipmap-xxxhdpi
+        echo "✅ Resource directories ready"
         
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: |
+        echo "🔨 Building Debug APK..."
+        ./gradlew assembleDebug --stacktrace --info
+        echo "✅ Debug APK built successfully"
       
-    - name: Build Release APK
-      run: ./gradlew assembleRelease --stacktrace
+    - name: Build Release APK (unsigned)
+      run: |
+        echo "🔨 Building Release APK..."
+        ./gradlew assembleRelease --stacktrace
+        echo "✅ Release APK built successfully"
       continue-on-error: true
       
     - name: Run Unit Tests
-      run: ./gradlew test --stacktrace
+      run: |
+        echo "🧪 Running unit tests..."
+        ./gradlew test --stacktrace
       continue-on-error: true
       
-    - name: Run Lint
-      run: ./gradlew lint --stacktrace
+    - name: Run Lint Checks
+      run: |
+        echo "🔍 Running lint checks..."
+        ./gradlew lint --stacktrace
       continue-on-error: true
       
-    - name: Get version name
+    - name: Get version info
       id: version
       run: |
-        VERSION=$(grep "versionName" app/build.gradle | awk '{print $2}' | tr -d '"')
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Version: $VERSION"
+        # Extract version from build.gradle or build.gradle.kts
+        if [ -f "app/build.gradle.kts" ]; then
+          VERSION=$(grep -E 'versionName.*=.*".*"' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/' | head -1)
+        elif [ -f "app/build.gradle" ]; then
+          VERSION=$(grep 'versionName' app/build.gradle | awk '{print $2}' | tr -d '"' | tr -d "'" | head -1)
+        else
+          VERSION="1.0.0"
+        fi
         
-    - name: Rename APK
+        if [ -z "$VERSION" ]; then
+          VERSION="1.0.0"
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "📱 Version detected: $VERSION"
+        
+    - name: Find and prepare APKs
+      id: find_apk
       run: |
-        cd app/build/outputs/apk/debug
-        mv app-debug.apk JPlayer-v${{ steps.version.outputs.version }}-debug.apk
+        echo "📦 Locating APK files..."
+        
+        # Find debug APK
+        DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
+        
+        if [ -n "$DEBUG_APK" ]; then
+          DIR=$(dirname "$DEBUG_APK")
+          NEW_NAME="JPlayer-v${{ steps.version.outputs.version }}-debug.apk"
+          mv "$DEBUG_APK" "$DIR/$NEW_NAME"
+          echo "debug_apk=$DIR/$NEW_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Debug APK: $NEW_NAME"
+          
+          # Get APK size
+          SIZE=$(du -h "$DIR/$NEW_NAME" | cut -f1)
+          echo "apk_size=$SIZE" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Debug APK not found"
+          exit 1
+        fi
+        
+        # Find release APK (optional)
+        RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" -type f 2>/dev/null | head -1)
+        if [ -n "$RELEASE_APK" ]; then
+          echo "release_found=true" >> $GITHUB_OUTPUT
+          echo "✅ Release APK found"
+        else
+          echo "release_found=false" >> $GITHUB_OUTPUT
+        fi
         
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: JPlayer-Debug-APK
-        path: app/build/outputs/apk/debug/JPlayer-v${{ steps.version.outputs.version }}-debug.apk
+        name: JPlayer-v${{ steps.version.outputs.version }}-debug
+        path: ${{ steps.find_apk.outputs.debug_apk }}
         retention-days: 30
+        if-no-files-found: error
         
     - name: Upload Release APK
-      if: success()
+      if: steps.find_apk.outputs.release_found == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: JPlayer-Release-APK
+        name: JPlayer-v${{ steps.version.outputs.version }}-release
         path: app/build/outputs/apk/release/*.apk
         retention-days: 30
       continue-on-error: true
@@ -92,8 +160,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: app/build/test-results/
+        path: |
+          app/build/test-results/**/*.xml
+          app/build/reports/tests/**/*
         retention-days: 7
+        if-no-files-found: ignore
       continue-on-error: true
         
     - name: Upload Lint Results
@@ -101,8 +172,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: lint-results
-        path: app/build/reports/lint-results*.html
+        path: |
+          app/build/reports/lint-*.html
+          app/build/reports/lint-*.xml
         retention-days: 7
+        if-no-files-found: ignore
       continue-on-error: true
         
     - name: Build Summary
@@ -110,14 +184,30 @@ jobs:
       run: |
         echo "## 🎬 JPlayer Build Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Build Information" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Build Information" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **Version** | ${{ steps.version.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Build Time** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Debug APK generated successfully" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "${{ steps.find_apk.outputs.debug_apk }}" ]; then
+          echo "- ✅ **Debug APK**: JPlayer-v${{ steps.version.outputs.version }}-debug.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- 💾 **Size**: ${{ steps.find_apk.outputs.apk_size }}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Debug APK generation failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ steps.find_apk.outputs.release_found }}" == "true" ]; then
+          echo "- ✅ **Release APK**: Available" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📥 Download" >> $GITHUB_STEP_SUMMARY
+        echo "Go to the **Actions** tab above and download the artifacts." >> $GITHUB_STEP_SUMMARY
         
   release:
     needs: build
@@ -131,17 +221,32 @@ jobs:
     - name: Download Debug APK
       uses: actions/download-artifact@v4
       with:
-        name: JPlayer-Debug-APK
+        pattern: JPlayer-v*-debug
         path: ./artifacts
+        merge-multiple: true
         
     - name: Get version and date
       id: release_info
       run: |
-        VERSION=$(grep "versionName" app/build.gradle | awk '{print $2}' | tr -d '"')
+        if [ -f "app/build.gradle.kts" ]; then
+          VERSION=$(grep -E 'versionName.*=.*".*"' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/' | head -1)
+        elif [ -f "app/build.gradle" ]; then
+          VERSION=$(grep 'versionName' app/build.gradle | awk '{print $2}' | tr -d '"' | tr -d "'" | head -1)
+        else
+          VERSION="1.0.0"
+        fi
+        
+        if [ -z "$VERSION" ]; then
+          VERSION="1.0.0"
+        fi
+        
         DATE=$(date +"%Y-%m-%d")
+        TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+        
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "date=$DATE" >> $GITHUB_OUTPUT
-        echo "tag=v$VERSION-$DATE" >> $GITHUB_OUTPUT
+        echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+        echo "tag=v$VERSION-$TIMESTAMP" >> $GITHUB_OUTPUT
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -151,32 +256,49 @@ jobs:
         body: |
           ## 🎬 JPlayer v${{ steps.release_info.outputs.version }}
           
-          ### What's New
-          - Latest build from main branch
-          - Build date: ${{ steps.release_info.outputs.date }}
-          - Commit: ${{ github.sha }}
+          **Automated release from main branch**
           
-          ### Features
-          - 📹 Advanced video player with gesture controls
-          - 🎵 Audio player with background playback
-          - 🎮 A-B repeat, playback speed control
-          - 🔒 Screen lock and orientation controls
-          - 📊 Smart sorting and playlists
+          ### 📅 Release Information
+          - **Version**: ${{ steps.release_info.outputs.version }}
+          - **Build Date**: ${{ steps.release_info.outputs.date }}
+          - **Commit**: [${{ github.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.sha }})
+          - **Branch**: ${{ github.ref_name }}
           
-          ### Download
-          Download the APK below and install on your Android device (API 24+)
+          ### ✨ Features
+          - 📹 **Video Player**: Advanced playback with gesture controls
+          - 🎵 **Audio Player**: Background playback with notification controls
+          - 🎮 **Controls**: A-B repeat, variable playback speed (0.25x - 2.0x)
+          - 🔒 **Screen Controls**: Lock/unlock orientation, rotation support
+          - 📊 **Organization**: Smart sorting, playlists, favorites
+          - 🔍 **Search**: Quick media search functionality
+          - 🎨 **UI**: Material Design 3 with modern interface
           
-          ### Installation
-          1. Download JPlayer-v${{ steps.release_info.outputs.version }}-debug.apk
+          ### 📥 Installation
+          1. Download `JPlayer-v${{ steps.release_info.outputs.version }}-debug.apk` below
           2. Enable "Install from Unknown Sources" in your device settings
-          3. Install the APK
-          4. Grant necessary permissions (Storage, etc.)
+          3. Install the APK file
+          4. Grant necessary permissions (Storage, Media, etc.)
+          
+          ### 📱 Requirements
+          - Android 7.0 (API 24) or higher
+          - ~20MB storage space
+          - Permissions: Storage, Media access
+          
+          ### 🔧 Tech Stack
+          - Kotlin 100%
+          - Media3 ExoPlayer
+          - Material Design 3
+          - MVVM Architecture
           
           ---
+          
           Made with ❤️ in Madagascar
+          
+          > **Note**: This is a debug build for testing purposes. For production use, consider using a signed release build.
         files: |
-          ./artifacts/JPlayer-v${{ steps.release_info.outputs.version }}-debug.apk
+          ./artifacts/*.apk
         draft: false
         prerelease: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
