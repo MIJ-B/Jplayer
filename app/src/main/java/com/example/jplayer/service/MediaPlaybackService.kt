@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
@@ -135,6 +134,7 @@ class MediaPlaybackService : MediaSessionService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // ✅ VOAHOVA - Build notification tsy misy MediaStyle
         val builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(mediaTitle)
             .setContentText("IPlayer")
@@ -143,6 +143,7 @@ class MediaPlaybackService : MediaSessionService() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(isPlaying)
             .addAction(
                 R.drawable.ic_skip_previous,
                 "Previous",
@@ -157,11 +158,6 @@ class MediaPlaybackService : MediaSessionService() {
                 R.drawable.ic_skip_next,
                 "Next",
                 nextPendingIntent
-            )
-            .setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
-                    .setMediaSession(mediaSession?.sessionCompatToken)
             )
         
         return builder.build()
