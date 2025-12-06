@@ -1,4 +1,4 @@
-{
+plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-parcelize")
@@ -50,16 +50,16 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // Media3 ExoPlayer - COMPLETE
+    // Media3 ExoPlayer
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
     implementation("androidx.media3:media3-common:1.2.1")
     implementation("androidx.media3:media3-session:1.2.1")
-    
-    // ✅ NAMBOARINA - Media support ho an'ny notification
+
+    // Media Compat
     implementation("androidx.media:media:1.7.0")
 
-    // Lifecycle & ViewModel
+    // Lifecycle components
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
@@ -86,7 +86,7 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
 
-    // Glide for thumbnails
+    // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
     // Preferences
