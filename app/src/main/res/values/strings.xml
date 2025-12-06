@@ -1,5 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">IPlayer</string>
+    
+    <!-- Tab titles -->
+    <string name="tab_videos">Videos</string>
+    <string name="tab_audio">Audio</string>
+    <string name="tab_playlists">Playlists</string>
+    
+    <!-- Menu items -->
+    <string name="menu_view_mode">View Mode</string>
+    <string name="menu_sort">Sort</string>
+    <string name="menu_search">Search</string>
+    <string name="menu_settings">Settings</string>
+    
+    <!-- Sort options -->
+    <string name="sort_name_asc">Name (A-Z)</string>
+    <string name="sort_name_desc">Name (Z-A)</string>
+    <string name="sort_date_newest">Newest First</string>
+    <string name="sort_date_oldest">Oldest First</string>
+    <string name="sort_duration_longest">Longest Duration</string>
+    <string name="sort_duration_shortest">Shortest Duration</string>
+    <string name="sort_size_largest">Largest Size</string>
+    <string name="sort_size_smallest">Smallest Size</string>
+    
+    <!-- Player controls -->
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="repeat">Repeat</string>
+    <string name="speed">Speed</string>
+    <string name="ab_repeat">A-B Repeat</string>
+    <string name="lock_orientation">Lock Orientation</string>
+    <string name="rotate_screen">Rotate Screen</string>
+    
+    <!-- Messages -->
+    <string name="no_videos_found">No videos found</string>
+    <string name="no_audio_found">No audio found</string>
+    <string name="permission_required">Storage permission is required to access media files</string>
+    <string name="loading">Loading…</string>
+    
+    <!-- Notifications -->
+    <string name="notification_channel_name">Media Playback</string>
+    <string name="notification_channel_description">Controls for media playback</string>
+    
+    <!-- Content descriptions -->
+    <string name="video_thumbnail">Video thumbnail</string>
     <string name="video_icon">Video icon</string>
+    <string name="back_button">Back</string>
+    <string name="more_options">More options</string>
 </resources>
