@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.Jplayer"
+    namespace = "com.example.jplayer"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.iplayer"
+        applicationId = "com.example.jplayer"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -65,6 +65,9 @@ dependencies {
 
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // CardView
+    implementation("androidx.cardview:cardview:1.0.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
