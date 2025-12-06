@@ -90,50 +90,76 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadMedia() {
-        mediaList.clear()
-        
-        val projection = arrayOf(
-            MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.DURATION,
-            MediaStore.Video.Media.SIZE,
-            MediaStore.Video.Media.DATA
-        )
+    mediaList.clear()
+    
+    val projection = arrayOf(
+        MediaStore.Video.Media._ID,
+        MediaStore.Video.Media.DISPLAY_NAME,
+        MediaStore.Video.Media.DURATION,
+        MediaStore.Video.Media.SIZE,
+        MediaStore.Video.Media.DATA,
+        MediaStore.Video.Media.DATE_ADDED,
+        MediaStore.Video.Media.WIDTH,
+        MediaStore.Video.Media.HEIGHT
+    )
 
-        val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
+    val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
 
-        val cursor = contentResolver.query(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            null,
-            null,
-            sortOrder
-        )
+    val cursor = contentResolver.query(
+        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        null,
+        null,
+        sortOrder
+    )
 
-        cursor?.use {
-            val idColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-            val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+    cursor?.use {
+        val idColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+        val nameColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+        val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+        val sizeColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+        val pathColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+        val dateColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+        val widthColumn = it.getColumnIndex(MediaStore.Video.Media.WIDTH)
+        val heightColumn = it.getColumnIndex(MediaStore.Video.Media.HEIGHT)
 
-            while (it.moveToNext()) {
-                val id = it.getLong(idColumn)
-                val name = it.getString(nameColumn)
-                val duration = it.getLong(durationColumn)
-                val uri = Uri.withAppendedPath(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
-                    id.toString()
+        while (it.moveToNext()) {
+            val id = it.getLong(idColumn)
+            val name = it.getString(nameColumn)
+            val duration = it.getLong(durationColumn)
+            val size = it.getLong(sizeColumn)
+            val path = it.getString(pathColumn)
+            val dateAdded = it.getLong(dateColumn)
+            val width = if (widthColumn >= 0) it.getInt(widthColumn) else 0
+            val height = if (heightColumn >= 0) it.getInt(heightColumn) else 0
+            
+            val uri = Uri.withAppendedPath(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
+                id.toString()
+            )
+
+            mediaList.add(
+                MediaItem(
+                    id = id,
+                    name = name,
+                    uri = uri,
+                    duration = duration,
+                    size = size,
+                    dateAdded = dateAdded,
+                    path = path,
+                    width = width,
+                    height = height
                 )
-
-                mediaList.add(MediaItem(id, name, uri, duration))
-            }
-        }
-
-        mediaAdapter.notifyDataSetChanged()
-        
-        if (mediaList.isEmpty()) {
-            Toast.makeText(this, "No videos found", Toast.LENGTH_SHORT).show()
+            )
         }
     }
+
+    mediaAdapter.notifyDataSetChanged()
+    
+    if (mediaList.isEmpty()) {
+        Toast.makeText(this, "No videos found", Toast.LENGTH_SHORT).show()
+    }
+}
 
     private fun openPlayer(mediaItem: MediaItem) {
         val intent = Intent(this, PlayerActivity::class.java).apply {
