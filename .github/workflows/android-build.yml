@@ -26,6 +26,53 @@ jobs:
       with:
         gradle-version: 8.2
 
+    # ✅ NAMBOARINA - Fix build.gradle.kts ALOHA
+    - name: Fix root build.gradle.kts
+      run: |
+        echo "🔧 Creating proper root build.gradle.kts..."
+        cat > build.gradle.kts << 'EOF'
+        // Top-level build file where you can add configuration options common to all sub-projects/modules.
+        plugins {
+            id("com.android.application") version "8.2.0" apply false
+            id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+        }
+        
+        tasks.register("clean", Delete::class) {
+            delete(rootProject.buildDir)
+        }
+        EOF
+        
+        echo "✅ Root build.gradle.kts created!"
+        cat build.gradle.kts
+
+    # ✅ NAMBOARINA - Fix settings.gradle.kts ALOHA
+    - name: Fix settings.gradle.kts
+      run: |
+        echo "🔧 Creating proper settings.gradle.kts..."
+        cat > settings.gradle.kts << 'EOF'
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        
+        rootProject.name = "JPlayer"
+        include(":app")
+        EOF
+        
+        echo "✅ settings.gradle.kts created!"
+        cat settings.gradle.kts
+
     - name: Generate Gradle Wrapper
       run: gradle wrapper --gradle-version 8.2
 
@@ -452,7 +499,7 @@ jobs:
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: JPlayer-debug-apk
+        name: IPlayer-debug-apk
         path: app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
 
