@@ -2,141 +2,176 @@ package com.example.jplayer
 
 import android.os.Bundle
 import android.view.View
-import android.view.WindowManager
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.SeekBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.example.jplayer.databinding.ActivityPlayerBinding
+import com.bumptech.glide.Glide
+import com.example.jplayer.data.MediaItem as JPlayerMediaItem
+import java.util.concurrent.TimeUnit
 
 class PlayerActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityPlayerBinding
-    private var player: ExoPlayer? = null
-    private var playWhenReady = true
-    private var currentPosition = 0L
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityPlayerBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        // Hide system UI for immersive experience
-        hideSystemUI()
-
-        val mediaUri = intent.getStringExtra("MEDIA_URI")
-        val mediaTitle = intent.getStringExtra("MEDIA_TITLE")
-
-        supportActionBar?.apply {
-            title = mediaTitle
-            setDisplayHomeAsUpEnabled(true)
-        }
-
-        if (mediaUri != null) {
-            initializePlayer(mediaUri)
-        } else {
-            finish()
-        }
-    }
-
-    private fun hideSystemUI() {
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
-        
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-        )
-    }
-
-    private fun initializePlayer(mediaUri: String) {
-        player = ExoPlayer.Builder(this).build().also { exoPlayer ->
-            binding.playerView.player = exoPlayer
-            
-            val mediaItem = MediaItem.fromUri(mediaUri)
-            exoPlayer.setMediaItem(mediaItem)
-            exoPlayer.playWhenReady = playWhenReady
-            exoPlayer.seekTo(currentPosition)
-            exoPlayer.prepare()
-
-            // Add listener for playback state
-            exoPlayer.addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    when (playbackState) {
-                        Player.STATE_ENDED -> {
-                            // Video finished
-                            finish()
-                        }
-                        Player.STATE_READY -> {
-                            // Player is ready
-                        }
-                        Player.STATE_BUFFERING -> {
-                            // Buffering
-                        }
-                        Player.STATE_IDLE -> {
-                            // Idle
-                        }
-                    }
-                }
-
-                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                    super.onPlayerError(error)
-                    // Handle error
-                    finish()
-                }
-            })
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        if (player == null) {
-            intent.getStringExtra("MEDIA_URI")?.let { 
-                initializePlayer(it) 
+    private lateinit var player: ExoPlayer
+    private lateinit var titleView: TextView
+    private lateinit var artistView: TextView
+    private lateinit var currentTimeView: TextView
+    private lateinit var totalTimeView: TextView
+    private lateinit var seekBar: SeekBar
+    private lateinit var playPauseButton: ImageButton
+    private lateinit var albumArtView: ImageView
+    
+    private var isPlaying = false
+    private val updateSeekBarRunnable = object : Runnable {
+        override fun run() {
+            if (::player.isInitialized && player.isPlaying) {
+                val currentPosition = player.currentPosition
+                val duration = player.duration
+                
+                seekBar.max = duration.toInt()
+                seekBar.progress = currentPosition.toInt()
+                currentTimeView.text = formatTime(currentPosition)
+                
+                seekBar.postDelayed(this, 100)
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        hideSystemUI()
-        player?.playWhenReady = playWhenReady
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_player)
+
+        // Initialize views
+        titleView = findViewById(R.id.player_title)
+        artistView = findViewById(R.id.player_artist)
+        currentTimeView = findViewById(R.id.current_time)
+        totalTimeView = findViewById(R.id.total_time)
+        seekBar = findViewById(R.id.seek_bar)
+        playPauseButton = findViewById(R.id.play_pause_button)
+        albumArtView = findViewById(R.id.player_album_art)
+
+        // Get media item from intent
+        val mediaItem = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra("media_item", JPlayerMediaItem::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra("media_item")
+        }
+
+        mediaItem?.let {
+            setupPlayer(it)
+            displayMediaInfo(it)
+        }
+
+        setupControls()
     }
 
-    override fun onPause() {
-        super.onPause()
-        player?.let {
-            playWhenReady = it.playWhenReady
-            currentPosition = it.currentPosition
+    private fun setupPlayer(mediaItem: JPlayerMediaItem) {
+        player = ExoPlayer.Builder(this).build()
+        
+        val exoMediaItem = MediaItem.fromUri(mediaItem.path.toUri())
+        player.setMediaItem(exoMediaItem)
+        player.prepare()
+        player.playWhenReady = true
+        
+        player.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        totalTimeView.text = formatTime(player.duration)
+                        seekBar.max = player.duration.toInt()
+                        updateSeekBar()
+                    }
+                    Player.STATE_ENDED -> {
+                        playPauseButton.setImageResource(R.drawable.ic_play)
+                        isPlaying = false
+                    }
+                }
+            }
+
+            override fun onIsPlayingChanged(playing: Boolean) {
+                isPlaying = playing
+                playPauseButton.setImageResource(
+                    if (playing) R.drawable.ic_pause else R.drawable.ic_play
+                )
+                if (playing) {
+                    updateSeekBar()
+                }
+            }
+        })
+    }
+
+    private fun displayMediaInfo(mediaItem: JPlayerMediaItem) {
+        titleView.text = mediaItem.title
+        artistView.text = mediaItem.artist
+        
+        if (mediaItem.albumArt != null) {
+            Glide.with(this)
+                .load(mediaItem.albumArt)
+                .placeholder(R.drawable.ic_music_note)
+                .into(albumArtView)
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        releasePlayer()
+    private fun setupControls() {
+        playPauseButton.setOnClickListener {
+            if (player.isPlaying) {
+                player.pause()
+            } else {
+                player.play()
+            }
+        }
+
+        findViewById<ImageButton>(R.id.previous_button).setOnClickListener {
+            player.seekTo(0)
+        }
+
+        findViewById<ImageButton>(R.id.next_button).setOnClickListener {
+            // TODO: Implement next track
+        }
+
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    player.seekTo(progress.toLong())
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        findViewById<ImageButton>(R.id.back_button).setOnClickListener {
+            finish()
+        }
+    }
+
+    private fun updateSeekBar() {
+        seekBar.post(updateSeekBarRunnable)
+    }
+
+    private fun formatTime(millis: Long): String {
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
+        return String.format("%02d:%02d", minutes, seconds)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        releasePlayer()
-    }
-
-    private fun releasePlayer() {
-        player?.let {
-            playWhenReady = it.playWhenReady
-            currentPosition = it.currentPosition
-            it.release()
+        if (::player.isInitialized) {
+            player.release()
         }
-        player = null
+        seekBar.removeCallbacks(updateSeekBarRunnable)
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
+    override fun onPause() {
+        super.onPause()
+        if (::player.isInitialized) {
+            player.pause()
+        }
     }
 }
