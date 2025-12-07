@@ -1,25 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme -->
-    <style name="Base.Theme.JPlayer" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.JPlayer" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Primary brand color -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
+        
+        <!-- Secondary brand color -->
         <item name="colorSecondary">@color/teal_200</item>
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        
+        <!-- Status bar color -->
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        
+        <!-- Customize your theme here -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
-
-    <style name="Theme.JPlayer" parent="Base.Theme.JPlayer">
-        <item name="android:windowActionBar">true</item>
+    
+    <!-- NoActionBar theme for compatibility -->
+    <style name="Theme.JPlayer.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
-
-    <!-- Fullscreen theme for player -->
-    <style name="Theme.JPlayer.Fullscreen" parent="Theme.JPlayer">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-    </style>
+    
+    <!-- AppBarOverlay theme -->
+    <style name="Theme.JPlayer.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+    
+    <!-- PopupOverlay theme -->
+    <style name="Theme.JPlayer.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
 </resources>
