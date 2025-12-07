@@ -1,5 +1,6 @@
 package com.example.jplayer
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -144,6 +145,28 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun setupPlayer(mediaItem: JPlayerMediaItem) {
         try {
+            val uri = mediaItem.path.toUri()
+            android.util.Log.d("PlayerActivity", "Media URI: $uri")
+            
+            // IMPORTANT: Grant URI permission ho an'ny ExoPlayer
+            if (uri.scheme == "content") {
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: SecurityException) {
+                    android.util.Log.w("PlayerActivity", "Cannot take persistable permission: ${e.message}")
+                }
+                
+                // Grant temporary permission
+                grantUriPermission(
+                    packageName,
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            
             // Create DataSource factory
             val dataSourceFactory = DefaultDataSource.Factory(this)
             
@@ -162,9 +185,6 @@ class PlayerActivity : AppCompatActivity() {
             }
             
             // Create MediaItem from URI
-            val uri = mediaItem.path.toUri()
-            android.util.Log.d("PlayerActivity", "Media URI: $uri")
-            
             val exoMediaItem = MediaItem.Builder()
                 .setUri(uri)
                 .build()
@@ -177,11 +197,25 @@ class PlayerActivity : AppCompatActivity() {
             player.addListener(object : Player.Listener {
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                     android.util.Log.e("PlayerActivity", "Playback error: ${error.message}", error)
-                    Toast.makeText(
-                        this@PlayerActivity,
-                        "Cannot play this file: ${error.errorCodeName}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    android.util.Log.e("PlayerActivity", "Error code: ${error.errorCode}")
+                    android.util.Log.e("PlayerActivity", "Error code name: ${error.errorCodeName}")
+                    
+                    val errorMsg = when (error.errorCode) {
+                        androidx.media3.common.PlaybackException.ERROR_CODE_IO_NO_PERMISSION -> {
+                            "No permission to access this file"
+                        }
+                        androidx.media3.common.PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> {
+                            "File not found"
+                        }
+                        androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> {
+                            "Unsupported file format"
+                        }
+                        else -> {
+                            "Cannot play this file: ${error.errorCodeName}"
+                        }
+                    }
+                    
+                    Toast.makeText(this@PlayerActivity, errorMsg, Toast.LENGTH_LONG).show()
                 }
                 
                 override fun onPlaybackStateChanged(playbackState: Int) {
