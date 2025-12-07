@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -120,7 +121,9 @@ class PlayerActivity : AppCompatActivity() {
                         .error(R.drawable.ic_music_note)
                         .into(albumArtView)
                 } else {
-                    albumArtView.setImageResource(R.drawable.ic_music_note)
+                    albumArtView.setImageDrawable(
+                        AppCompatResources.getDrawable(this, R.drawable.ic_music_note)
+                    )
                 }
             }
             MediaType.VIDEO -> {
@@ -157,7 +160,9 @@ class PlayerActivity : AppCompatActivity() {
                         }
                     }
                     Player.STATE_ENDED -> {
-                        playPauseButton.setImageResource(R.drawable.ic_play)
+                        playPauseButton.setImageDrawable(
+                            AppCompatResources.getDrawable(this@PlayerActivity, R.drawable.ic_play)
+                        )
                         isPlaying = false
                     }
                 }
@@ -165,8 +170,9 @@ class PlayerActivity : AppCompatActivity() {
 
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
-                playPauseButton.setImageResource(
-                    if (playing) R.drawable.ic_pause else R.drawable.ic_play
+                val iconRes = if (playing) R.drawable.ic_pause else R.drawable.ic_play
+                playPauseButton.setImageDrawable(
+                    AppCompatResources.getDrawable(this@PlayerActivity, iconRes)
                 )
                 if (playing) {
                     updateSeekBar()
