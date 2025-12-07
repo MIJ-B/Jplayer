@@ -28,6 +28,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Player Activity -->
+        <activity
+            android:name=".PlayerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.JPlayer.NoActionBar" />
+
     </application>
 
 </manifest>
