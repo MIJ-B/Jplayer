@@ -13,8 +13,8 @@
         android:layout_height="48dp"
         android:layout_margin="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_back"
-        android:tint="@android:color/white"
+        app:srcCompat="@drawable/ic_back"
+        app:tint="@android:color/white"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:contentDescription="Back" />
@@ -35,7 +35,7 @@
             android:layout_width="300dp"
             android:layout_height="300dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_music_note"
+            app:srcCompat="@drawable/ic_music_note"
             android:contentDescription="Album Art" />
 
         <TextView
@@ -134,8 +134,8 @@
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_previous"
-                android:tint="@android:color/white"
+                app:srcCompat="@drawable/ic_previous"
+                app:tint="@android:color/white"
                 android:contentDescription="Previous" />
 
             <ImageButton
@@ -144,8 +144,8 @@
                 android:layout_height="80dp"
                 android:layout_marginHorizontal="32dp"
                 android:background="@drawable/bg_play_button"
-                android:src="@drawable/ic_pause"
-                android:tint="@android:color/white"
+                app:srcCompat="@drawable/ic_pause"
+                app:tint="@android:color/white"
                 android:contentDescription="Play/Pause" />
 
             <ImageButton
@@ -153,8 +153,8 @@
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_next"
-                android:tint="@android:color/white"
+                app:srcCompat="@drawable/ic_next"
+                app:tint="@android:color/white"
                 android:contentDescription="Next" />
         </LinearLayout>
     </LinearLayout>
