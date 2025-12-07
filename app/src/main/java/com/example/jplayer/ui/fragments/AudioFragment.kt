@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.jplayer.R
+import com.example.jplayer.PlayerActivity
 import com.example.jplayer.data.MediaItem
 import com.example.jplayer.ui.MediaAdapter
 import com.example.jplayer.utils.MediaScanner
