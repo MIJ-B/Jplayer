@@ -59,7 +59,7 @@ class VideoFragment : Fragment() {
     private fun setupRecyclerView() {
         adapter = MediaAdapter(
             onItemClick = { mediaItem ->
-                Toast.makeText(context, "Playing: ${mediaItem.title}", Toast.LENGTH_SHORT).show()
+                playVideo(mediaItem)
             },
             onMenuClick = { mediaItem, menuView ->
                 showMediaMenu(mediaItem, menuView)
@@ -68,6 +68,12 @@ class VideoFragment : Fragment() {
 
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
+    }
+
+    private fun playVideo(mediaItem: MediaItem) {
+        val intent = android.content.Intent(requireContext(), PlayerActivity::class.java)
+        intent.putExtra("media_item", mediaItem)
+        startActivity(intent)
     }
 
     private fun setupSwipeRefresh() {
