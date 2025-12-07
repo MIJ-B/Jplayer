@@ -3,18 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_view_mode"
-        android:icon="@drawable/ic_view_list"
-        android:title="View Mode"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/action_sort"
-        android:icon="@drawable/ic_sort"
-        android:title="Sort"
-        app:showAsAction="ifRoom" />
-
-    <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_search"
         android:title="Search"
@@ -22,8 +10,9 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
 
     <item
-        android:id="@+id/action_settings"
-        android:title="Settings"
-        app:showAsAction="never" />
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        android:title="Sort"
+        app:showAsAction="ifRoom" />
 
 </menu>
