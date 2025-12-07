@@ -6,18 +6,23 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.bumptech.glide.Glide
 import com.example.jplayer.data.MediaItem as JPlayerMediaItem
 import com.example.jplayer.data.MediaType
 import java.util.concurrent.TimeUnit
 
+@UnstableApi
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var player: ExoPlayer
@@ -79,6 +84,9 @@ class PlayerActivity : AppCompatActivity() {
             setupUI(it)
             setupPlayer(it)
             setupControls()
+        } ?: run {
+            Toast.makeText(this, "No media to play", Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 
@@ -135,50 +143,98 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupPlayer(mediaItem: JPlayerMediaItem) {
-        player = ExoPlayer.Builder(this).build()
-        
-        // Attach player to views
-        if (mediaItem.type == MediaType.VIDEO) {
-            playerView.player = player
-            playerView.useController = false // Use custom controls
-        }
-        
-        val exoMediaItem = MediaItem.fromUri(mediaItem.path.toUri())
-        player.setMediaItem(exoMediaItem)
-        player.prepare()
-        player.playWhenReady = true
-        
-        player.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        val duration = player.duration
-                        if (duration > 0) {
-                            totalTimeView.text = formatTime(duration)
-                            seekBar.max = duration.toInt()
-                            updateSeekBar()
+        try {
+            // Create DataSource factory
+            val dataSourceFactory = DefaultDataSource.Factory(this)
+            
+            // Create MediaSource factory
+            val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+            
+            // Build ExoPlayer with proper data source
+            player = ExoPlayer.Builder(this)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build()
+            
+            // Attach player to views
+            if (mediaItem.type == MediaType.VIDEO) {
+                playerView.player = player
+                playerView.useController = false
+            }
+            
+            // Create MediaItem from URI
+            val uri = mediaItem.path.toUri()
+            android.util.Log.d("PlayerActivity", "Media URI: $uri")
+            
+            val exoMediaItem = MediaItem.Builder()
+                .setUri(uri)
+                .build()
+            
+            player.setMediaItem(exoMediaItem)
+            player.prepare()
+            player.playWhenReady = true
+            
+            // Add listeners
+            player.addListener(object : Player.Listener {
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    android.util.Log.e("PlayerActivity", "Playback error: ${error.message}", error)
+                    Toast.makeText(
+                        this@PlayerActivity,
+                        "Cannot play this file: ${error.errorCodeName}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    android.util.Log.d("PlayerActivity", "Playback state: $playbackState")
+                    when (playbackState) {
+                        Player.STATE_IDLE -> {
+                            android.util.Log.d("PlayerActivity", "STATE_IDLE")
+                        }
+                        Player.STATE_BUFFERING -> {
+                            android.util.Log.d("PlayerActivity", "STATE_BUFFERING")
+                        }
+                        Player.STATE_READY -> {
+                            android.util.Log.d("PlayerActivity", "STATE_READY")
+                            val duration = player.duration
+                            android.util.Log.d("PlayerActivity", "Duration: $duration ms")
+                            
+                            if (duration > 0 && duration != androidx.media3.common.C.TIME_UNSET) {
+                                totalTimeView.text = formatTime(duration)
+                                seekBar.max = duration.toInt()
+                                updateSeekBar()
+                            } else {
+                                android.util.Log.w("PlayerActivity", "Invalid duration")
+                                totalTimeView.text = "--:--"
+                            }
+                        }
+                        Player.STATE_ENDED -> {
+                            android.util.Log.d("PlayerActivity", "STATE_ENDED")
+                            playPauseButton.setImageDrawable(
+                                AppCompatResources.getDrawable(this@PlayerActivity, R.drawable.ic_play)
+                            )
+                            isPlaying = false
                         }
                     }
-                    Player.STATE_ENDED -> {
-                        playPauseButton.setImageDrawable(
-                            AppCompatResources.getDrawable(this@PlayerActivity, R.drawable.ic_play)
-                        )
-                        isPlaying = false
+                }
+
+                override fun onIsPlayingChanged(playing: Boolean) {
+                    android.util.Log.d("PlayerActivity", "Is playing: $playing")
+                    isPlaying = playing
+                    val iconRes = if (playing) R.drawable.ic_pause else R.drawable.ic_play
+                    playPauseButton.setImageDrawable(
+                        AppCompatResources.getDrawable(this@PlayerActivity, iconRes)
+                    )
+                    if (playing) {
+                        updateSeekBar()
                     }
                 }
-            }
-
-            override fun onIsPlayingChanged(playing: Boolean) {
-                isPlaying = playing
-                val iconRes = if (playing) R.drawable.ic_pause else R.drawable.ic_play
-                playPauseButton.setImageDrawable(
-                    AppCompatResources.getDrawable(this@PlayerActivity, iconRes)
-                )
-                if (playing) {
-                    updateSeekBar()
-                }
-            }
-        })
+            })
+            
+        } catch (e: Exception) {
+            android.util.Log.e("PlayerActivity", "Error setting up player", e)
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun setupControls() {
@@ -232,7 +288,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun formatTime(millis: Long): String {
-        if (millis < 0) return "00:00"
+        if (millis < 0 || millis == androidx.media3.common.C.TIME_UNSET) return "00:00"
         val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
         val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
         return String.format("%02d:%02d", minutes, seconds)
