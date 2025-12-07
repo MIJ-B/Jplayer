@@ -1,7 +1,6 @@
 package com.example.jplayer
 
 import android.os.Bundle
-import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.SeekBar
@@ -24,6 +23,9 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var totalTimeView: TextView
     private lateinit var seekBar: SeekBar
     private lateinit var playPauseButton: ImageButton
+    private lateinit var previousButton: ImageButton
+    private lateinit var nextButton: ImageButton
+    private lateinit var backButton: ImageButton
     private lateinit var albumArtView: ImageView
     
     private var isPlaying = false
@@ -53,6 +55,9 @@ class PlayerActivity : AppCompatActivity() {
         totalTimeView = findViewById(R.id.total_time)
         seekBar = findViewById(R.id.seek_bar)
         playPauseButton = findViewById(R.id.play_pause_button)
+        previousButton = findViewById(R.id.previous_button)
+        nextButton = findViewById(R.id.next_button)
+        backButton = findViewById(R.id.back_button)
         albumArtView = findViewById(R.id.player_album_art)
 
         // Get media item from intent
@@ -114,7 +119,10 @@ class PlayerActivity : AppCompatActivity() {
             Glide.with(this)
                 .load(mediaItem.albumArt)
                 .placeholder(R.drawable.ic_music_note)
+                .error(R.drawable.ic_music_note)
                 .into(albumArtView)
+        } else {
+            albumArtView.setImageResource(R.drawable.ic_music_note)
         }
     }
 
@@ -127,12 +135,16 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<ImageButton>(R.id.previous_button).setOnClickListener {
+        previousButton.setOnClickListener {
             player.seekTo(0)
         }
 
-        findViewById<ImageButton>(R.id.next_button).setOnClickListener {
+        nextButton.setOnClickListener {
             // TODO: Implement next track
+        }
+
+        backButton.setOnClickListener {
+            finish()
         }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -144,10 +156,6 @@ class PlayerActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
-
-        findViewById<ImageButton>(R.id.back_button).setOnClickListener {
-            finish()
-        }
     }
 
     private fun updateSeekBar() {
