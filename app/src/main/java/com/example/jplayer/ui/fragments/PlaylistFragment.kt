@@ -1,84 +1,66 @@
-package com.example.jplayer.ui.fragments
+package com.example.jplayer.ui
 
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
-import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jplayer.R
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.jplayer.data.Playlist
+import java.text.SimpleDateFormat
+import java.util.*
 
-class PlaylistFragment : Fragment() {
+class PlaylistAdapter(
+    private val onItemClick: (Playlist) -> Unit,
+    private val onMenuClick: (Playlist, View) -> Unit
+) : ListAdapter<Playlist, PlaylistAdapter.PlaylistViewHolder>(PlaylistDiffCallback()) {
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var emptyView: TextView
-    private lateinit var fabAddPlaylist: FloatingActionButton
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_playlist, container, false)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaylistViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_playlist, parent, false)
+        return PlaylistViewHolder(view, onItemClick, onMenuClick)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        recyclerView = view.findViewById(R.id.recycler_view)
-        emptyView = view.findViewById(R.id.empty_view)
-        fabAddPlaylist = view.findViewById(R.id.fab_add_playlist)
-
-        setupRecyclerView()
-        setupFab()
-        
-        // Show empty state for now
-        showEmptyState()
+    override fun onBindViewHolder(holder: PlaylistViewHolder, position: Int) {
+        holder.bind(getItem(position))
     }
 
-    private fun setupRecyclerView() {
-        recyclerView.layoutManager = LinearLayoutManager(context)
-        // TODO: Add adapter when playlist data is ready
-    }
+    class PlaylistViewHolder(
+        itemView: View,
+        private val onItemClick: (Playlist) -> Unit,
+        private val onMenuClick: (Playlist, View) -> Unit
+    ) : RecyclerView.ViewHolder(itemView) {
 
-    private fun setupFab() {
-        fabAddPlaylist.setOnClickListener {
-            showCreatePlaylistDialog()
+        private val nameView: TextView = itemView.findViewById(R.id.playlist_name)
+        private val countView: TextView = itemView.findViewById(R.id.playlist_count)
+        private val dateView: TextView = itemView.findViewById(R.id.playlist_date)
+        private val menuButton: ImageView = itemView.findViewById(R.id.playlist_menu)
+
+        fun bind(playlist: Playlist) {
+            nameView.text = playlist.name
+            countView.text = "${playlist.itemCount} tracks"
+            dateView.text = formatDate(playlist.dateCreated)
+
+            itemView.setOnClickListener { onItemClick(playlist) }
+            menuButton.setOnClickListener { onMenuClick(playlist, it) }
+        }
+
+        private fun formatDate(timestamp: Long): String {
+            val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            return sdf.format(Date(timestamp * 1000))
         }
     }
 
-    private fun showEmptyState() {
-        recyclerView.visibility = View.GONE
-        emptyView.visibility = View.VISIBLE
-        emptyView.text = "No playlists yet\n\nTap + to create a new playlist"
-    }
+    private class PlaylistDiffCallback : DiffUtil.ItemCallback<Playlist>() {
+        override fun areItemsTheSame(oldItem: Playlist, newItem: Playlist): Boolean {
+            return oldItem.id == newItem.id
+        }
 
-    private fun showCreatePlaylistDialog() {
-        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-        val input = android.widget.EditText(requireContext())
-        input.hint = "Playlist name"
-        input.setPadding(50, 30, 50, 30)
-
-        builder.setTitle("Create Playlist")
-            .setView(input)
-            .setPositiveButton("Create") { _, _ ->
-                val playlistName = input.text.toString().trim()
-                if (playlistName.isNotEmpty()) {
-                    createPlaylist(playlistName)
-                } else {
-                    Toast.makeText(context, "Please enter a playlist name", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun createPlaylist(name: String) {
-        // TODO: Implement playlist creation
-        Toast.makeText(context, "Playlist '$name' created", Toast.LENGTH_SHORT).show()
+        override fun areContentsTheSame(oldItem: Playlist, newItem: Playlist): Boolean {
+            return oldItem == newItem
+        }
     }
 }
